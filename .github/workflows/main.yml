@@ -1,10 +1,36 @@
 name: CI
 
-on: [push, pull_request]
+on:
+  pull_request:
+  push:
+    branches: [master]
 
 jobs:
-  lint-check:
-    name: Lint / Type Check
+  lint:
+    name: Lint Check
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Checkout node action
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: '.nvmrc'
+          cache-dependency-path: 'yarn.lock'
+
+      - name: Install NPM dependencies
+        run: yarn install --immutable
+
+      - name: Check ESLint
+        run: yarn lint
+
+  typecheck:
+    name: Type Check
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -12,28 +38,22 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Checkout node action
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
           node-version-file: '.nvmrc'
           cache-dependency-path: '**/yarn.lock'
 
       - name: Install NPM dependencies
-        run: yarn install
-
-      - name: Check ESLint
-        run: yarn lint:eslint
-
-      - name: Check prettier formatting
-        run: yarn lint:prettier
+        run: yarn install --immutable
 
       - name: Runs compile asset script
-        run: node ./compile-assets.js
+        run: node ./compile-assets.cjs
 
       - name: Check Types
-        run: yarn lint:types
+        run: yarn typecheck
 
   tests:
     name: Tests
@@ -44,20 +64,46 @@ jobs:
 
     strategy:
       matrix:
-        node-version: [14.x, 16.x, 18.x]
+        node-version: [20.x, 22.x]
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Use Node.js ${{ matrix.node-version }}
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node-version }}
           cache-dependency-path: '**/yarn.lock'
 
       - name: Install NPM dependencies
-        run: yarn install
+        run: yarn install --immutable
+
+      - name: Runs compile asset script
+        run: node ./compile-assets.cjs
 
       - name: Run Unit Tests
-        run: yarn test:unit
+        run: yarn test
+        
+  lint-testapp:
+    name: Lint Testapp
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./examples/testapp
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Checkout node action
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: '.nvmrc'
+          cache-dependency-path: 'yarn.lock'
+
+      - name: Install NPM dependencies
+        run: yarn install --immutable
+
+      - name: eslint
+        run: yarn lint

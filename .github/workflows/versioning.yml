@@ -41,9 +41,12 @@ jobs:
           cache-dependency-path: '**/yarn.lock'
 
       - name: Update version
-        run: yarn version --new-version ${{ env.PACKAGE_VERSION }} --no-git-tag-version
+        run: npm version ${{ env.PACKAGE_VERSION }} --no-git-tag-version --workspaces-update=false
 
-      - name: Update version.ts file
+      - name: Install NPM dependencies
+        run: yarn install --immutable
+
+      - name: Update sdk-info.ts file
         run: yarn prebuild
 
       - name: Commit and branch updated version
